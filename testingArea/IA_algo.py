@@ -124,3 +124,21 @@ if __name__ == '__main__':
     board[2][5] = 't'
     findUp(board, (5,8))
     printBoard(board)
+    
+  
+#def countNeighbours(x,y):
+#  count = 0
+#   if (board[x][y] == 'W' or board[x][y] == '.' or board[x][y] == '~'                     #self
+#       or board[x-1][y] == 'W' or board[x-1][y] == '.' or board[x-1][y] == '~'            #acima
+#       or board[x][y+1] == 'W' or board[x][y+1] == '.' or board[x][y+1] == '~'            #diagonal 
+#       or board[x-1][y+1] == 'W' or board[x-1][y+1] == '.' or board[x-1][y+1] == '~'):    #frente
+#           count = count
+#   else:
+#       count += count 
+#   return count
+
+
+#def idkYet():
+#    for i in range(10):
+#        for  j in range(10):
+#            return countNeighbours(i,j)
