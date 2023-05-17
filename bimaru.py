@@ -35,28 +35,40 @@ class BimaruState:
 
 class Board:
     """Representação interna de um tabuleiro de Bimaru."""
-
-    def __init__(self, rows, columns, values): 
+    
+    def __init__(self, rows, columns, values, boats): 
         self.rows = rows
         self.columns = columns
         self.values = values
+        self.boats = boats
 
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
-        # TODO
-        pass
+        return self.values[row, col]
 
     def adjacent_vertical_values(self, row: int, col: int) -> (str, str):
         """Devolve os valores imediatamente acima e abaixo,
         respectivamente."""
-        # TODO
-        pass
+        above = '~'
+        below='~'
+        if (row+1 < 10):
+            below = self.values[row+1, col] 
+        if (row-1 >= 0):
+            above = self.values[row-1, col] 
 
+        return (above, below)
+        
     def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
-        # TODO
-        pass
+        left = '~'
+        right='~'
+        if (col+1 < 10):
+            right = self.values[row, col+1] 
+        if (col-1 >= 0):
+            left = self.values[row, col-1] 
+
+        return (left, right)
 
     @staticmethod
     def parse_instance():
@@ -68,6 +80,9 @@ class Board:
         Cria o tabuleiro com os valores
         """
         values = []
+        boats = [4,3,2,1]
+        hash_map = np.full(100, -1, dtype=int)
+
         for i in range(10):
             values_line = np.full(shape=10,fill_value="~")
             values.append(values_line)
@@ -96,9 +111,22 @@ class Board:
         for x in range(hints_n):
             line = input()
             line = line.split('\t')
+            vertical = adjacent_vertical_values(int(line[1]), int(line[2]))
+            horizontal = adjacent_horizontal_values(int(line[1]), int(line[2]))
+            if(vertical[0]!='~' and vertical[0]!='.' and vertical[0].lower!='w'):
+                
+            elif(vertical[1]!='~' and vertical[1]!='.' and vertical[1].lower!='w'):
+            
+            elif(horizontal[0]!='~' or horizontal[0]!='.' or horizontal[0].lower!='w'):
+            
+            elif(horizontal[1]!='~' or horizontal[1]!='.' or horizontal[1].lower!='w'):
+
+            else:
+                n
+
             values[int(line[1]), int(line[2])] = line[3]
         
-        board = Board(string_row, string_column, values)
+        board = Board(string_row, string_column, values, boats)
         return board 
 
     def printBoard(self):
@@ -113,26 +141,26 @@ class Board:
     def vertical(self,x,y,board):
         bottomPiece = getPiece(x,y,board)
         topPiece = getPiece(x-1,y,board)
-        if (bottomPiece=='c') and (topPiece=='c'):
+        if (bottomPiece=='m') and (topPiece=='m'):
             return True
         if (bottomPiece=='b') and (topPiece=='t'):
             return True
-        if (bottomPiece=='b') and (topPiece=='c'):
+        if (bottomPiece=='b') and (topPiece=='m'):
             return True
-        if (bottomPiece=='c') and (topPiece=='t'):
+        if (bottomPiece=='m') and (topPiece=='t'):
             return True
         return False
 
     def horizontal(self,x,y,board):
         leftPiece = getPiece(x,y,board)
         rightPiece = getPiece(x,y+1,board)
-        if (leftPiece=='c') and (rightPiece=='c'):
+        if (leftPiece=='m') and (rightPiece=='m'):
             return True
         if (leftPiece=='r') and (rightPiece=='l'):
             return True
-        if (leftPiece=='r') and (rightPiece=='c'):
+        if (leftPiece=='r') and (rightPiece=='m'):
             return True
-        if (leftPiece=='c') and (rightPiece=='l'):
+        if (leftPiece=='m') and (rightPiece=='l'):
             return True
         return False
 
