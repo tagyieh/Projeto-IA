@@ -2,9 +2,9 @@
 # Devem alterar as classes e funções neste ficheiro de acordo com as instruções do enunciado.
 # Além das funções e classes já definidas, podem acrescentar outras que considerem pertinentes.
 
-# Grupo 00:
-# 00000 Nome1
-# 00000 Nome2
+# Grupo 40:
+# 102823 Beatriz Paulo
+# 103726 Tomás Fonseca
 
 import sys
 import numpy as np
@@ -69,7 +69,7 @@ class Board:
         """
         values = []
         for i in range(10):
-            values_line = np.full(shape=10,fill_value=" ")
+            values_line = np.full(shape=10,fill_value="~")
             values.append(values_line)
         values = np.asarray(values)
         """
@@ -106,20 +106,90 @@ class Board:
             for j in range(10):
                 print(self.values[i][j], end="")
             print()
+
+    def getPiece(self,x,y,board):
+        return board[x][y].lower()
+
+    def vertical(self,x,y,board):
+        bottomPiece = getPiece(x,y,board)
+        topPiece = getPiece(x-1,y,board)
+        if (bottomPiece=='c') and (topPiece=='c'):
+            return True
+        if (bottomPiece=='b') and (topPiece=='t'):
+            return True
+        if (bottomPiece=='b') and (topPiece=='c'):
+            return True
+        if (bottomPiece=='c') and (topPiece=='t'):
+            return True
+        return False
+
+    def horizontal(self,x,y,board):
+        leftPiece = getPiece(x,y,board)
+        rightPiece = getPiece(x,y+1,board)
+        if (leftPiece=='c') and (rightPiece=='c'):
+            return True
+        if (leftPiece=='r') and (rightPiece=='l'):
+            return True
+        if (leftPiece=='r') and (rightPiece=='c'):
+            return True
+        if (leftPiece=='c') and (rightPiece=='l'):
+            return True
+        return False
+
+    def countNeighbours(self,x,y,board):
+        count = 0
+        boats = 0
+        selfBoat = False
+        aboveBoat = False
+        rightBoat = False
+        diagonalBoat = False
+        if (board[x][y] != 'W' and board[x][y] != '.' and board[x][y] != '~'):                      #self
+            count += 1
+            selfBoat = True
+
+        if (x-1>=0) and (board[x-1][y] != 'W' and board[x-1][y] != '.' and board[x-1][y] != '~'):   #acima
+            count += 1
+            aboveBoat = True
+
+        if (y+1<10) and (board[x][y+1] != 'W' and board[x][y+1] != '.' and board[x][y+1] != '~'):   #frente
+            count+=1
+            rightBoat=True
+
+        if (x-1>=0 and y+1<10) and (board[x-1][y+1] != 'W' and board[x-1][y+1] != '.' and board[x-1][y+1] != '~'):    #diagonal
+            count += 1
+            diagonalBoat=True
+        
+        condition = False
+        if (count==2):
+            if selfBoat and aboveBoat:
+                condition = vertical(x,y,board)
+            elif selfBoat and rightBoat:
+                condition = horizontal(x,y,board)
+            elif rightBoat and diagonalBoat:
+                condition = vertical(x,y+1,board)
+            elif aboveBoat and diagonalBoat:
+                condition = horizontal(x-1,y,board)
+        if condition:
+            count-=1
+        return count
     # TODO: outros metodos da classe
 
 
 class Bimaru(Problem):
     def __init__(self, board: Board):
         """O construtor especifica o estado inicial."""
-        # TODO
+        self.board = board
         pass
 
     def actions(self, state: BimaruState):
         """Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento."""
         # TODO
-        pass
+        for i in range(10):
+            for  j in range(10):
+                count = state.board.countNeighbours(i,j,state.board.values)
+                print(count,end='')
+            print()
 
     def result(self, state: BimaruState, action):
         """Retorna o estado resultante de executar a 'action' sobre
@@ -152,4 +222,8 @@ if __name__ == "__main__":
     # Imprimir para o standard output no formato indicado.
     board = Board.parse_instance()
     board.printBoard()
+    print()
+    initialState = BimaruState(board)
+    problem = Bimaru(board)
+    problem.actions(initialState)
     pass
