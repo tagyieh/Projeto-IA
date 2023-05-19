@@ -47,9 +47,10 @@ class Board:
         """Devolve o valor na respetiva posição do tabuleiro."""
         return self.values[row, col]
 
+    """
     def adjacent_vertical_values(self, row: int, col: int) -> (str, str):
-        """Devolve os valores imediatamente acima e abaixo,
-        respectivamente."""
+        Devolve os valores imediatamente acima e abaixo,
+        respectivamente.
         above = '~'
         below='~'
         if (row+1 < 10):
@@ -60,8 +61,8 @@ class Board:
         return (above, below)
         
     def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):
-        """Devolve os valores imediatamente à esquerda e à direita,
-        respectivamente."""
+        Devolve os valores imediatamente à esquerda e à direita,
+        respectivamente.
         left = '~'
         right='~'
         if (col+1 < 10):
@@ -70,7 +71,7 @@ class Board:
             left = self.values[row, col-1] 
 
         return (left, right)
-
+    """
     @staticmethod
     def parse_instance():
         """Lê o test do standard input (stdin) que é passado como argumento
@@ -85,7 +86,7 @@ class Board:
         #hash_map = np.full(100, -1, dtype=int)
 
         for i in range(10):
-            values_line = np.full(shape=10,fill_value="~")
+            values_line = np.full(shape=10,fill_value="~")    #preenche o tabuleiro com vazios
             values.append(values_line)
         values = np.asarray(values)
         """
@@ -113,22 +114,23 @@ class Board:
             line = input()
             line = line.split('\t')
             if (line[3]!='C' and line[3]!='W'):
-                currentHint = np.array([int(line[1]), int(line[2]), line[3]])
-                hintsVec.append(currentHint)
-            values[int(line[1]), int(line[2])] = line[3]
+                currentHint = np.array([int(line[1]), int(line[2]), line[3]])   #cria vetor de hint
+                hintsVec.append(currentHint)                                    #adiciona vetor a lista de hints
+            values[int(line[1]), int(line[2])] = line[3]                        #adiciona hint ao tabuleiro
         
         hintsVec = np.asarray(hintsVec)
         board = Board(string_row, string_column, values, boats, hintsVec)
         return board 
 
     def printBoard(self):
+        print()
         for i in self.columns:
-            print(i,end="")
+            print(" " + str(i),end="")                      #print dos valores de cada coluna
         print()
         for i in range(10):
             for j in range(10):
-                print(self.values[i][j], end="")
-            print(" " + self.rows[i])
+                print(" " + str(self.values[i][j]), end="")   #print de cada valor do tabuleiro
+            print("  " + self.rows[i])                        #print dos valores de cada linha
 
     def getPiece(self,x,y,board):
         return board[x][y].lower()
@@ -185,15 +187,15 @@ class Board:
         condition = False
         if (count==2):
             if selfBoat and aboveBoat:
-                condition = self.vertical(x,y,board)
+                condition = self.vertical(x,y,board)        #se o barco for o mesmo vertical(self, above)
             elif selfBoat and rightBoat:
-                condition = self.horizontal(x,y,board)
+                condition = self.horizontal(x,y,board)      #se o barco for o mesmo horizontal(self, right)
             elif rightBoat and diagonalBoat:
-                condition = self.vertical(x,y+1,board)
+                condition = self.vertical(x,y+1,board)      #se o barco for o mesmo vertical(right, diagonal)
             elif aboveBoat and diagonalBoat:
-                condition = self.horizontal(x-1,y,board)
+                condition = self.horizontal(x-1,y,board)    #se o barco for o mesmo horizontal(above, diagonal)
         if condition:
-            count-=1
+            count-=1                                        #se for igual tirar um ao count P==1
         return count
     # TODO: outros metodos da classe
 
@@ -217,7 +219,7 @@ class Bimaru(Problem):
             i = 1
             for action in actions:
                 d = self.result(state, action)
-                print(i)
+                print("Action #" + str(i))
                 d.board.printBoard()
                 print()
                 i+=1
@@ -232,35 +234,35 @@ class Bimaru(Problem):
         self.actions(state)."""
 
         # TODO update pistas laterais
-        board = np.copy(state.board.values)
+        board = np.copy(state.board.values)             #copia board
         rows = np.copy(state.board.rows)
         columns = np.copy(state.board.columns)
         boats = np.copy(state.board.boats)
         hints = np.copy(state.board.boats)
-        direction = action[0]
-        x = int(action[1])
+        direction = action[0]                           # H (horizontal), V (vertical)
+        x = int(action[1])                              #action = (direction, x, y, size)
         y = int(action[2])
         size = int(action[3])
 
-        if (direction=='H'):
-            if (board[x, y]=='~'):
-                rows[x] = int(rows[x]) - 1
-                columns[y] = int(columns[y]) - 1
-                board[x, y] = 't'
+        if (direction=='V'):                            #se a direcao for vertical
+            if (board[x, y]=='~'):                      #se a posicao for vazia
+                rows[x] = int(rows[x]) - 1              #diminui o valor da row
+                columns[y] = int(columns[y]) - 1        #diminui o valor da collumn
+                board[x, y] = 't'                       #adiciona um top
 
             for i in range(1, size-1):
                 if (board[x+i, y]=='~'):
                     rows[x+i] = int(rows[x+i]) - 1
                     columns[y] = int(columns[y]) - 1
-                    board[x+i, y]='m'
+                    board[x+i, y]='m'                   #adiciona um middle
 
             if (board[x+size-1, y]=='~'):
                 rows[x+size-1] = int(rows[x+size-1]) - 1
                 columns[y] = int(columns[y]) - 1
-                board[x+size-1, y]='b'
+                board[x+size-1, y]='b'                  #adiciona um bottom
 
-        boats[size-1] -= 1
-        hints = hints[1:]
+        boats[size-1] -= 1                              #retira o barco que foi metido
+        hints = hints[1:]                               #atualiza o vetor das hints
         newBoard = Board(rows, columns, board, boats, hints)
         newState = BimaruState(newBoard)
         return newState
@@ -345,11 +347,11 @@ class Bimaru(Problem):
         y = hint[1]
         piece = hint[2]
         i = 4
-        while (i>1):    
+        while (i>1):             #verifica o maior size de boat que podemos meter
             if (self.boatFits(int(x),int(y),piece,i)):
                 break
             i -= 1
-        print(i)
+        print("here" + str(i))
         return i
 
     def solveHints(self):
@@ -359,7 +361,7 @@ class Bimaru(Problem):
             possibilities = []
             for i in range(2, maxSize+1):
                 possibility = np.full(shape=4,fill_value="~")
-                possibility[0] = 'H'
+                possibility[0] = 'V'                        #vertical
                 possibility[1] = hint[0]
                 possibility[2] = hint[1]
                 possibility[3] = i
@@ -367,11 +369,11 @@ class Bimaru(Problem):
             possibilities = np.asarray(possibilities)
             return possibilities
                 
-        elif hint[2]=='B':
+        elif hint[2]=='B':            #termos que contar x-size para dar apenas o top
             self.tryBottom(hint)
         elif hint[2]=='R':
             self.tryRight(hint)
-        elif hint[2]=='L':
+        elif hint[2]=='L':            #termos que contar y+size para dar apenas o right
             self.tryLeft(hint)
         else:
             self.tryMiddle(hint)
