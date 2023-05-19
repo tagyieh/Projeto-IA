@@ -122,17 +122,20 @@ class Board:
         return board 
 
     def printBoard(self):
+        for i in self.columns:
+            print(i,end="")
+        print()
         for i in range(10):
             for j in range(10):
                 print(self.values[i][j], end="")
-            print()
+            print(" " + self.rows[i])
 
     def getPiece(self,x,y,board):
         return board[x][y].lower()
 
     def vertical(self,x,y,board):
-        bottomPiece = getPiece(x,y,board)
-        topPiece = getPiece(x-1,y,board)
+        bottomPiece = self.getPiece(x,y,board)
+        topPiece = self.getPiece(x-1,y,board)
         if (bottomPiece=='m') and (topPiece=='m'):
             return True
         if (bottomPiece=='b') and (topPiece=='t'):
@@ -144,8 +147,8 @@ class Board:
         return False
 
     def horizontal(self,x,y,board):
-        leftPiece = getPiece(x,y,board)
-        rightPiece = getPiece(x,y+1,board)
+        leftPiece = self.getPiece(x,y,board)
+        rightPiece = self.getPiece(x,y+1,board)
         if (leftPiece=='m') and (rightPiece=='m'):
             return True
         if (leftPiece=='r') and (rightPiece=='l'):
@@ -182,13 +185,13 @@ class Board:
         condition = False
         if (count==2):
             if selfBoat and aboveBoat:
-                condition = vertical(x,y,board)
+                condition = self.vertical(x,y,board)
             elif selfBoat and rightBoat:
-                condition = horizontal(x,y,board)
+                condition = self.horizontal(x,y,board)
             elif rightBoat and diagonalBoat:
-                condition = vertical(x,y+1,board)
+                condition = self.vertical(x,y+1,board)
             elif aboveBoat and diagonalBoat:
-                condition = horizontal(x-1,y,board)
+                condition = self.horizontal(x-1,y,board)
         if condition:
             count-=1
         return count
@@ -233,49 +236,83 @@ class Bimaru(Problem):
         # TODO
         pass
 
+    def p(self):
+        """
+        Calcula a matriz P
+        """
+        for i in range(10):
+            for  j in range(10):
+                count = self.board.countNeighbours(i,j,self.board.values)
+                if (count > 2):
+                    return False
+        return True
+
     def boatFits(self, x, y, piece, size):
         condition = True
         oldPieces = np.full(shape=4,fill_value="~")
         # Verifica se o tabuleiro está apto para receber o navio
         if (piece == 'T') and (x+size<10) and (int(self.board.columns[y])-size>=0) and \
             (self.board.values[x+size-1][y] == '~' or self.board.values[x+size-1][y] == 'B'):
+
             # Inicializa as peças antigas com as peças nas posições atuais do tabuleiro
             oldPieces[0] = piece
             oldPieces[1] = self.board.values[x+1][y]
             oldPieces[2] = self.board.values[x+2][y]
             oldPieces[3] = self.board.values[x+3][y]
-            # Verifica se as posiões que estão entre as pontas são vazias ou meios
+
+            # Verifica se as posiões que estão entre as pontas são vazias ou meios e se podemos por
+            # a peça sem quebrar as pistas laterais
             for i in range(1,size-1):
-                if self.board.values[x+i][y] != 'M' and self.board.values[x+i][y] != '~': 
+                if self.board.values[x+i][y] != 'M' and self.board.values[x+i][y] != '~':
                     condition = False
+                if int(self.board.rows[x+i])<1:
+                    #Se a peça não poder ser posta por restrições laterais, então pomos uma água
+                    #lá, para evitar procuras desnecessárias
+                    condition = False
+                    oldPieces[i] = 'W'
                 board.values[x+i][y] = 'm'
-            # Se não forem, temos que repor o tabuleiro e retornar Falso (o barco não cabe)
+
+            self.board.values[x+size-1][y] = 'b'
+            # Verificamos, ainda, se as pista lateral também permite por a peça terminal
+            if int(self.board.rows[x+size-1]) < 1:
+                #Novamente, pomos água se as restrições não permitem
+                oldPieces[size-1] = 'W'
+                condition = False
+
+            # Se não der, temos que repor o tabuleiro e retornar Falso (o barco não cabe)
             if not condition:
                 self.board.values[x+1][y] = oldPieces[1]
                 self.board.values[x+2][y] = oldPieces[2]
-                print("Fuck you")
-                self.board.printBoard()
+                self.board.values[x+3][y] = oldPieces[3]
+                #self.board.printBoard()
                 return False
-            # Se forem, então o tabuleiro pode receber o navio, pelo que pomos os novos valores
-            self.board.values[x+size-1][y] = 'b'
-            self.board.printBoard()
+
             # Só temos de verificar se a matriz P o permite
+            result = self.p()
 
-            
+            # Antes de mais, temos que repor o tabuleiro, após testarmos a matriz P
+            self.board.values[x+1][y] = oldPieces[1]
+            self.board.values[x+2][y] = oldPieces[2]
+            self.board.values[x+3][y] = oldPieces[3]
 
+            #Então devolvemos se a matriz permite ou não
+            return result  
 
     def tryTop(self, hint):
         x = hint[0]
         y = hint[1]
         piece = hint[2]
-        if (self.boatFits(int(x),int(y),piece,2)):
-            pass
-            
+        i = 4
+        while (i>1):    
+            if (self.boatFits(int(x),int(y),piece,i)):
+                break
+            i -= 1
+        print(i)
+        return i
 
     def solveHints(self):
         hint = self.board.hints[0]
         if hint[2]=='T':
-            print("WaAAA")
             self.tryTop(hint)
         elif hint[2]=='B':
             self.tryBottom(hint)
@@ -295,7 +332,6 @@ if __name__ == "__main__":
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
     board = Board.parse_instance()
-    board.values[2][0]='W'
     board.printBoard()
     print()
     initialState = BimaruState(board)
