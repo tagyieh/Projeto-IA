@@ -36,11 +36,12 @@ class BimaruState:
 class Board:
     """Representação interna de um tabuleiro de Bimaru."""
     
-    def __init__(self, rows, columns, values, boats): 
+    def __init__(self, rows, columns, values, boats, hints): 
         self.rows = rows
         self.columns = columns
         self.values = values
         self.boats = boats
+        self.hints = hints
 
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
@@ -81,7 +82,7 @@ class Board:
         """
         values = []
         boats = [4,3,2,1]
-        hash_map = np.full(100, -1, dtype=int)
+        #hash_map = np.full(100, -1, dtype=int)
 
         for i in range(10):
             values_line = np.full(shape=10,fill_value="~")
@@ -107,26 +108,17 @@ class Board:
         """ 
         hints_n = input()
         hints_n = int(hints_n)
-
+        hintsVec = []
         for x in range(hints_n):
             line = input()
             line = line.split('\t')
-            vertical = adjacent_vertical_values(int(line[1]), int(line[2]))
-            horizontal = adjacent_horizontal_values(int(line[1]), int(line[2]))
-            if(vertical[0]!='~' and vertical[0]!='.' and vertical[0].lower!='w'):
-                
-            elif(vertical[1]!='~' and vertical[1]!='.' and vertical[1].lower!='w'):
-            
-            elif(horizontal[0]!='~' or horizontal[0]!='.' or horizontal[0].lower!='w'):
-            
-            elif(horizontal[1]!='~' or horizontal[1]!='.' or horizontal[1].lower!='w'):
-
-            else:
-                n
-
+            if (line[3]!='C' and line[3]!='W'):
+                currentHint = np.array([int(line[1]), int(line[2]), line[3]])
+                hintsVec.append(currentHint)
             values[int(line[1]), int(line[2])] = line[3]
         
-        board = Board(string_row, string_column, values, boats)
+        hintsVec = np.asarray(hintsVec)
+        board = Board(string_row, string_column, values, boats, hintsVec)
         return board 
 
     def printBoard(self):
@@ -212,12 +204,14 @@ class Bimaru(Problem):
     def actions(self, state: BimaruState):
         """Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento."""
-        # TODO
-        for i in range(10):
+        board = state.board
+        if board.hints.size > 0:
+            self.solveHints()
+        """for i in range(10):
             for  j in range(10):
                 count = state.board.countNeighbours(i,j,state.board.values)
                 print(count,end='')
-            print()
+            print()"""
 
     def result(self, state: BimaruState, action):
         """Retorna o estado resultante de executar a 'action' sobre
@@ -239,6 +233,58 @@ class Bimaru(Problem):
         # TODO
         pass
 
+    def boatFits(self, x, y, piece, size):
+        condition = True
+        oldPieces = np.full(shape=4,fill_value="~")
+        # Verifica se o tabuleiro está apto para receber o navio
+        if (piece == 'T') and (x+size<10) and (int(self.board.columns[y])-size>=0) and \
+            (self.board.values[x+size-1][y] == '~' or self.board.values[x+size-1][y] == 'B'):
+            # Inicializa as peças antigas com as peças nas posições atuais do tabuleiro
+            oldPieces[0] = piece
+            oldPieces[1] = self.board.values[x+1][y]
+            oldPieces[2] = self.board.values[x+2][y]
+            oldPieces[3] = self.board.values[x+3][y]
+            # Verifica se as posiões que estão entre as pontas são vazias ou meios
+            for i in range(1,size-1):
+                if self.board.values[x+i][y] != 'M' and self.board.values[x+i][y] != '~': 
+                    condition = False
+                board.values[x+i][y] = 'm'
+            # Se não forem, temos que repor o tabuleiro e retornar Falso (o barco não cabe)
+            if not condition:
+                self.board.values[x+1][y] = oldPieces[1]
+                self.board.values[x+2][y] = oldPieces[2]
+                print("Fuck you")
+                self.board.printBoard()
+                return False
+            # Se forem, então o tabuleiro pode receber o navio, pelo que pomos os novos valores
+            self.board.values[x+size-1][y] = 'b'
+            self.board.printBoard()
+            # Só temos de verificar se a matriz P o permite
+
+            
+
+
+    def tryTop(self, hint):
+        x = hint[0]
+        y = hint[1]
+        piece = hint[2]
+        if (self.boatFits(int(x),int(y),piece,2)):
+            pass
+            
+
+    def solveHints(self):
+        hint = self.board.hints[0]
+        if hint[2]=='T':
+            print("WaAAA")
+            self.tryTop(hint)
+        elif hint[2]=='B':
+            self.tryBottom(hint)
+        elif hint[2]=='R':
+            self.tryRight(hint)
+        elif hint[2]=='L':
+            self.tryLeft(hint)
+        else:
+            self.tryMiddle(hint)
     # TODO: outros metodos da classe
 
 
@@ -249,6 +295,7 @@ if __name__ == "__main__":
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
     board = Board.parse_instance()
+    board.values[2][0]='W'
     board.printBoard()
     print()
     initialState = BimaruState(board)
