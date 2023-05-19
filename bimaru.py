@@ -351,7 +351,19 @@ class Bimaru(Problem):
             if (self.boatFits(int(x),int(y),piece,i)):
                 break
             i -= 1
-        print("here" + str(i))
+        print("here top  " + str(i))
+        return i
+    
+    def tryBottom(self, hint):
+        x = hint[0]
+        y = hint[1]
+        piece = hint[2]
+        i = 4
+        while (i>1):             #verifica o maior size de boat que podemos meter
+            if (self.boatFits(int(x),int(y),piece,i)):
+                break
+            i -= 1
+        print("here bottom  " + str(i))
         return i
 
     def solveHints(self):
@@ -370,7 +382,17 @@ class Bimaru(Problem):
             return possibilities
                 
         elif hint[2]=='B':            #termos que contar x-size para dar apenas o top
-            self.tryBottom(hint)
+            maxSize = self.tryBottom(hint)
+            possibilities = []
+            for i in range(2, maxSize+1):
+                possibility = np.full(shape=4,fill_value="~")
+                possibility[0] = 'V'                        #vertical
+                possibility[1] = hint[0] - maxSize +1 #pode ser -4+2=-3 ou seja no maximo vai ter 3 para cima
+                possibility[2] = hint[1]
+                possibility[3] = i
+                possibilities.append(possibility)
+            possibilities = np.asarray(possibilities)
+            return possibilities
         elif hint[2]=='R':
             self.tryRight(hint)
         elif hint[2]=='L':            #termos que contar y+size para dar apenas o right
