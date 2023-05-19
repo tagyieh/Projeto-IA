@@ -208,21 +208,62 @@ class Bimaru(Problem):
         """Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento."""
         board = state.board
+        actions = []
+        # Vamos resolver primeiro as pistas
         if board.hints.size > 0:
-            self.solveHints()
-        """for i in range(10):
-            for  j in range(10):
-                count = state.board.countNeighbours(i,j,state.board.values)
-                print(count,end='')
-            print()"""
+            # Resolvemos uma pista e recebemos a lista de ações possíveis
+            actions = self.solveHints()
+            # MERO TESTE, NÃO SERÁ ASSIM
+            i = 1
+            for action in actions:
+                d = self.result(state, action)
+                print(i)
+                d.board.printBoard()
+                print()
+                i+=1
+
+
+        return np.asarray(actions)
 
     def result(self, state: BimaruState, action):
         """Retorna o estado resultante de executar a 'action' sobre
         'state' passado como argumento. A ação a executar deve ser uma
         das presentes na lista obtida pela execução de
         self.actions(state)."""
-        # TODO
-        pass
+
+        # TODO update pistas laterais
+        board = np.copy(state.board.values)
+        rows = np.copy(state.board.rows)
+        columns = np.copy(state.board.columns)
+        boats = np.copy(state.board.boats)
+        hints = np.copy(state.board.boats)
+        direction = action[0]
+        x = int(action[1])
+        y = int(action[2])
+        size = int(action[3])
+
+        if (direction=='H'):
+            if (board[x, y]=='~'):
+                rows[x] = int(rows[x]) - 1
+                columns[y] = int(columns[y]) - 1
+                board[x, y] = 't'
+
+            for i in range(1, size-1):
+                if (board[x+i, y]=='~'):
+                    rows[x+i] = int(rows[x+i]) - 1
+                    columns[y] = int(columns[y]) - 1
+                    board[x+i, y]='m'
+
+            if (board[x+size-1, y]=='~'):
+                rows[x+size-1] = int(rows[x+size-1]) - 1
+                columns[y] = int(columns[y]) - 1
+                board[x+size-1, y]='b'
+
+        boats[size-1] -= 1
+        hints = hints[1:]
+        newBoard = Board(rows, columns, board, boats, hints)
+        newState = BimaruState(newBoard)
+        return newState
 
     def goal_test(self, state: BimaruState):
         """Retorna True se e só se o estado passado como argumento é
@@ -269,6 +310,7 @@ class Bimaru(Problem):
                     #Se a peça não poder ser posta por restrições laterais, então pomos uma água
                     #lá, para evitar procuras desnecessárias
                     condition = False
+                    #TODO meter agua na row toda
                     oldPieces[i] = 'W'
                 board.values[x+i][y] = 'm'
 
@@ -313,7 +355,18 @@ class Bimaru(Problem):
     def solveHints(self):
         hint = self.board.hints[0]
         if hint[2]=='T':
-            self.tryTop(hint)
+            maxSize = self.tryTop(hint)
+            possibilities = []
+            for i in range(2, maxSize+1):
+                possibility = np.full(shape=4,fill_value="~")
+                possibility[0] = 'H'
+                possibility[1] = hint[0]
+                possibility[2] = hint[1]
+                possibility[3] = i
+                possibilities.append(possibility)
+            possibilities = np.asarray(possibilities)
+            return possibilities
+                
         elif hint[2]=='B':
             self.tryBottom(hint)
         elif hint[2]=='R':
@@ -332,7 +385,7 @@ if __name__ == "__main__":
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
     board = Board.parse_instance()
-    board.printBoard()
+    #board.printBoard()
     print()
     initialState = BimaruState(board)
     problem = Bimaru(board)
