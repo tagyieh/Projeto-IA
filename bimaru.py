@@ -154,11 +154,11 @@ class Board:
         rightPiece = self.getPiece(x,y+1,board)
         if (leftPiece=='m') and (rightPiece=='m'):
             return True
-        if (leftPiece=='r') and (rightPiece=='l'):
+        if (leftPiece=='l') and (rightPiece=='r'):
             return True
-        if (leftPiece=='r') and (rightPiece=='m'):
+        if (leftPiece=='l') and (rightPiece=='m'):
             return True
-        if (leftPiece=='m') and (rightPiece=='l'):
+        if (leftPiece=='m') and (rightPiece=='r'):
             return True
         return False
 
@@ -196,6 +196,7 @@ class Board:
                 condition = self.horizontal(x-1,y,board)    #se o barco for o mesmo horizontal(above, diagonal)
         if condition:
             count-=1                                        #se for igual tirar um ao count P==1
+        
         return count
     # TODO: outros metodos da classe
 
@@ -260,6 +261,23 @@ class Bimaru(Problem):
                 rows[x+size-1] = int(rows[x+size-1]) - 1
                 columns[y] = int(columns[y]) - 1
                 board[x+size-1, y]='b'                  #adiciona um bottom
+        
+        elif (direction=='H'):                            #se a direcao for vertical
+            if (board[x, y]=='~'):                      #se a posicao for vazia
+                rows[x] = int(rows[x]) - 1              #diminui o valor da row
+                columns[y] = int(columns[y]) - 1        #diminui o valor da collumn
+                board[x, y] = 'l'                       #adiciona um top
+
+            for i in range(1, size-1):
+                if (board[x, y+i]=='~'):
+                    rows[x] = int(rows[x]) - 1
+                    columns[y+1] = int(columns[y+i]) - 1
+                    board[x, y+i]='m'                   #adiciona um middle
+
+            if (board[x, y+size-1]=='~'):
+                rows[x] = int(rows[x]) - 1
+                columns[y+size-1] = int(columns[y+size-1]) - 1
+                board[x, y+size-1]='r'                  #adiciona um bottom
 
         boats[size-1] -= 1                              #retira o barco que foi metido
         hints = hints[1:]                               #atualiza o vetor das hints
@@ -312,14 +330,14 @@ class Bimaru(Problem):
                     #lá, para evitar procuras desnecessárias
                     condition = False
                     #TODO meter agua na row toda
-                    oldPieces[i] = 'W'
+                    oldPieces[i] = '.'
                 board.values[x+i][y] = 'm'
 
             self.board.values[x+size-1][y] = 'b'
             # Verificamos, ainda, se as pista lateral também permite por a peça terminal
             if int(self.board.rows[x+size-1]) < 1:
                 #Novamente, pomos água se as restrições não permitem
-                oldPieces[size-1] = 'W'
+                oldPieces[size-1] = '.'
                 condition = False
 
             # Se não der, temos que repor o tabuleiro e retornar Falso (o barco não cabe)
@@ -359,14 +377,14 @@ class Bimaru(Problem):
                     #lá, para evitar procuras desnecessárias
                     condition = False
                     #TODO meter agua na row toda
-                    oldPieces[i] = 'W'
+                    oldPieces[i] = '.'
                 board.values[x-i][y] = 'm'
 
             self.board.values[x-size+1][y] = 't'
             # Verificamos, ainda, se as pista lateral também permite por a peça terminal
             if int(self.board.rows[x-size+1]) < 1:
                 #Novamente, pomos água se as restrições não permitem
-                oldPieces[size-1] = 'W'
+                oldPieces[size-1] = '.'
                 condition = False
 
             # Se não der, temos que repor o tabuleiro e retornar Falso (o barco não cabe)
@@ -388,16 +406,114 @@ class Bimaru(Problem):
             #Então devolvemos se a matriz permite ou não
             return result 
 
+        if (piece == 'L' ) and (y+size<10) and (int(self.board.rows[x])-size>=0) and \
+            (self.board.values[x][y+size-1] == '~' or self.board.values[x][y+size-1] == 'R'):
+            # Inicializa as peças antigas com as peças nas posições atuais do tabuleiro
+            oldPieces[0] = piece
+            oldPieces[1] = self.board.values[x][y+1]
+            oldPieces[2] = self.board.values[x][y+2]
+            oldPieces[3] = self.board.values[x][y+3]
+
+            # Verifica se as posiões que estão entre as pontas são vazias ou meios e se podemos por
+            # a peça sem quebrar as pistas laterais
+            for i in range(1,size-1):
+                if self.board.values[x][y+i] != 'M' and self.board.values[x][y+i] != '~':
+                    condition = False
+                if int(self.board.columns[y+i])<1:
+                    #Se a peça não poder ser posta por restrições laterais, então pomos uma água
+                    #lá, para evitar procuras desnecessárias
+                    condition = False
+                    #TODO meter agua na row toda
+                    oldPieces[i] = '.'
+                board.values[x][y+i] = 'm'
+
+            self.board.values[x][y+size-1] = 'r'
+            # Verificamos, ainda, se as pista lateral também permite por a peça terminal
+            if int(self.board.columns[y+size-1]) < 1:
+                #Novamente, pomos água se as restrições não permitem
+                oldPieces[size-1] = '.'
+                condition = False
+
+            # Se não der, temos que repor o tabuleiro e retornar Falso (o barco não cabe)
+            if not condition:
+                self.board.values[x][y+1] = oldPieces[1]
+                self.board.values[x][y+2] = oldPieces[2]
+                self.board.values[x][y+3] = oldPieces[3]
+                #self.board.printBoard()
+                return False
+
+            # Só temos de verificar se a matriz P o permite
+            result = self.p()
+
+            # Antes de mais, temos que repor o tabuleiro, após testarmos a matriz P
+            self.board.values[x][y+1] = oldPieces[1]
+            self.board.values[x][y+2] = oldPieces[2]
+            self.board.values[x][y+3] = oldPieces[3]
+
+            #Então devolvemos se a matriz permite ou não
+            return result  
+        
+        if (piece == 'R' ) and (y-size+1>=0) and (int(self.board.rows[x])-size>=0) and \
+            (self.board.values[x][y-size+1] == '~' or self.board.values[x][y-size+1] == 'L'):
+            # Inicializa as peças antigas com as peças nas posições atuais do tabuleiro
+            oldPieces[0] = piece
+            oldPieces[1] = self.board.values[x][y-1]
+            oldPieces[2] = self.board.values[x][y-2]
+            oldPieces[3] = self.board.values[x][y-3]
+
+            # Verifica se as posiões que estão entre as pontas são vazias ou meios e se podemos por
+            # a peça sem quebrar as pistas laterais
+            for i in range(1,size-1):
+                if self.board.values[x][y-i] != 'M' and self.board.values[x][y-i] != '~':
+                    condition = False
+                if int(self.board.columns[y-i])<1:
+                    #Se a peça não poder ser posta por restrições laterais, então pomos uma água
+                    #lá, para evitar procuras desnecessárias
+                    condition = False
+                    #TODO meter agua na row toda
+                    oldPieces[i] = '.'
+                board.values[x][y-i] = 'm'
+
+            self.board.values[x][y-size+1] = 'l'
+            # Verificamos, ainda, se as pista lateral também permite por a peça terminal
+            if int(self.board.columns[y-size+1]) < 1:
+                #Novamente, pomos água se as restrições não permitem
+                oldPieces[size-1] = '.'
+                condition = False
+
+            # Se não der, temos que repor o tabuleiro e retornar Falso (o barco não cabe)
+            if not condition:
+                self.board.values[x][y-1] = oldPieces[1]
+                self.board.values[x][y-2] = oldPieces[2]
+                self.board.values[x][y-3] = oldPieces[3]
+                #self.board.printBoard()
+                return False
+
+            # Só temos de verificar se a matriz P o permite
+            result = self.p()
+
+            # Antes de mais, temos que repor o tabuleiro, após testarmos a matriz P
+            self.board.values[x][y-1] = oldPieces[1]
+            self.board.values[x][y-2] = oldPieces[2]
+            self.board.values[x][y-3] = oldPieces[3]
+
+            #Então devolvemos se a matriz permite ou não
+            return result 
+
     def tryTop(self, hint):
         x = hint[0]
         y = hint[1]
         piece = hint[2]
-        i = 4
-        while (i>1):             #verifica o maior size de boat que podemos meter
+        possibilities = []
+        for i in range(1,5):             #verifica o maior size de boat que podemos meter
             if (self.boatFits(int(x),int(y),piece,i)):
-                break
-            i -= 1
-        return i
+                possibility = np.full(shape=4,fill_value="~")
+                possibility[0] = 'V'                        #vertical
+                possibility[1] = hint[0]
+                possibility[2] = hint[1]
+                possibility[3] = i
+                possibilities.append(possibility)
+        return np.asarray(possibilities)
     
     def tryBottom(self, hint):
         x = hint[0]
@@ -412,29 +528,52 @@ class Bimaru(Problem):
                 possibility[2] = hint[1]
                 possibility[3] = i
                 possibilities.append(possibility)
-        return possibilities
+        return np.asarray(possibilities)
 
-    def solveHints(self):
-        hint = self.board.hints[0]
-        if hint[2]=='T':
-            maxSize = self.tryTop(hint)
-            possibilities = []
-            for i in range(2, maxSize+1):
+    def tryLeft(self, hint):
+        x = hint[0]
+        y = hint[1]
+        piece = hint[2]
+        possibilities = []
+        for i in range(1,5):             #verifica o maior size de boat que podemos meter
+            if (self.boatFits(int(x),int(y),piece,i)):
                 possibility = np.full(shape=4,fill_value="~")
-                possibility[0] = 'V'                        #vertical
+                possibility[0] = 'H'                        #horizontal
                 possibility[1] = hint[0]
                 possibility[2] = hint[1]
                 possibility[3] = i
                 possibilities.append(possibility)
-            possibilities = np.asarray(possibilities)
-            return possibilities
+        return np.asarray(possibilities)
+    
+    def tryRight(self, hint):
+        x = hint[0]
+        y = hint[1]
+        piece = hint[2]
+        possibilities = []
+        for i in range(1,5):             #verifica o maior size de boat que podemos meter
+            if (self.boatFits(int(x),int(y),piece,i)):
+                possibility = np.full(shape=4,fill_value="~")
+                possibility[0] = 'H'                        #vertical
+                possibility[1] = hint[0]
+                possibility[2] = int(hint[1]) - i +1 #pode ser -4+2=-3 ou seja no maximo vai ter 3 para a esquerda
+                possibility[3] = i
+                possibilities.append(possibility)
+        return np.asarray(possibilities)
+
+    def solveHints(self):
+        hint = self.board.hints[0]
+        if hint[2]=='T':
+            return self.tryTop(hint)
                 
         elif hint[2]=='B':            #termos que contar x-size para dar apenas o top
             return self.tryBottom(hint)
+        
         elif hint[2]=='R':
-            self.tryRight(hint)
+            return self.tryRight(hint)
+        
         elif hint[2]=='L':            #termos que contar y+size para dar apenas o right
-            self.tryLeft(hint)
+            return self.tryLeft(hint)
+
         else:
             self.tryMiddle(hint)
     # TODO: outros metodos da classe
@@ -447,7 +586,7 @@ if __name__ == "__main__":
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
     board = Board.parse_instance()
-    board.values[3][0]='T'
+    board.values[0][3]='M'
     #board.printBoard()
     print()
     initialState = BimaruState(board)
