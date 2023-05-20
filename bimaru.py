@@ -137,22 +137,16 @@ class Board:
         return board[x][y].lower()
 
     def vertical(self,x,y,board):
-        print("entering vertical ---" + str(x) + str(y))
         bottomPiece = self.getPiece(x,y,board)
         topPiece = self.getPiece(x-1,y,board)
         if (bottomPiece=='m') and (topPiece=='m'):
-            print("returning true --- 4")
             return True
         if (bottomPiece=='b') and (topPiece=='t'):
-            print("returning true --- 3")
             return True
         if (bottomPiece=='b') and (topPiece=='m'):
-            print("returning true --- 2")
             return True
         if (bottomPiece=='m') and (topPiece=='t'):
-            print("returning true --- 1")
             return True
-        print("returning false")
         return False
 
     def horizontal(self,x,y,board):
@@ -403,20 +397,22 @@ class Bimaru(Problem):
             if (self.boatFits(int(x),int(y),piece,i)):
                 break
             i -= 1
-        print("here top  " + str(i))
         return i
     
     def tryBottom(self, hint):
         x = hint[0]
         y = hint[1]
         piece = hint[2]
-        i = 4
-        while (i>1):             #verifica o maior size de boat que podemos meter
+        possibilities = []
+        for i in range(1,5):             #verifica o maior size de boat que podemos meter
             if (self.boatFits(int(x),int(y),piece,i)):
-                break
-            i -= 1
-        print("here bottom  " + str(i))
-        return i
+                possibility = np.full(shape=4,fill_value="~")
+                possibility[0] = 'V'                        #vertical
+                possibility[1] = int(hint[0]) - i +1 #pode ser -4+2=-3 ou seja no maximo vai ter 3 para cima
+                possibility[2] = hint[1]
+                possibility[3] = i
+                possibilities.append(possibility)
+        return possibilities
 
     def solveHints(self):
         hint = self.board.hints[0]
@@ -434,17 +430,7 @@ class Bimaru(Problem):
             return possibilities
                 
         elif hint[2]=='B':            #termos que contar x-size para dar apenas o top
-            maxSize = self.tryBottom(hint)
-            possibilities = []
-            for i in range(2, maxSize+1):
-                possibility = np.full(shape=4,fill_value="~")
-                possibility[0] = 'V'                        #vertical
-                possibility[1] = int(hint[0]) - i +1 #pode ser -4+2=-3 ou seja no maximo vai ter 3 para cima
-                possibility[2] = hint[1]
-                possibility[3] = i
-                possibilities.append(possibility)
-            possibilities = np.asarray(possibilities)
-            return possibilities
+            return self.tryBottom(hint)
         elif hint[2]=='R':
             self.tryRight(hint)
         elif hint[2]=='L':            #termos que contar y+size para dar apenas o right
@@ -461,7 +447,7 @@ if __name__ == "__main__":
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
     board = Board.parse_instance()
-    board.values[2][0]='M'
+    board.values[3][0]='T'
     #board.printBoard()
     print()
     initialState = BimaruState(board)
