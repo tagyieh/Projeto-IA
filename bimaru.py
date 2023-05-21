@@ -47,10 +47,9 @@ class Board:
         """Devolve o valor na respetiva posição do tabuleiro."""
         return self.values[row, col]
 
-    """
     def adjacent_vertical_values(self, row: int, col: int) -> (str, str):
-        Devolve os valores imediatamente acima e abaixo,
-        respectivamente.
+        """Devolve os valores imediatamente acima e abaixo,
+        respectivamente."""
         above = '~'
         below='~'
         if (row+1 < 10):
@@ -61,8 +60,8 @@ class Board:
         return (above, below)
         
     def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):
-        Devolve os valores imediatamente à esquerda e à direita,
-        respectivamente.
+        """Devolve os valores imediatamente à esquerda e à direita,
+        respectivamente."""
         left = '~'
         right='~'
         if (col+1 < 10):
@@ -71,7 +70,7 @@ class Board:
             left = self.values[row, col-1] 
 
         return (left, right)
-    """
+     
     @staticmethod
     def parse_instance():
         """Lê o test do standard input (stdin) que é passado como argumento
@@ -819,8 +818,8 @@ class Bimaru(Problem):
                 oldPieces.append(board.values[x-1][y])
                 oldPieces.append(board.values[x][y])
                 oldPieces.append(board.values[x+1][y])
-                board.values[x][y-1] = 't'
-                board.values[x][y+1] = 'b'
+                board.values[x-1][y] = 't'
+                board.values[x+1][y] = 'b'
                 if self.p():
                     action = ['V', x-1, y, 3]
                     actions.append(action)
@@ -830,7 +829,6 @@ class Bimaru(Problem):
 
         return np.asarray(actions)
         
-
     def solveHints(self):
         hint = self.board.hints[0]
         if hint[2]=='T':
@@ -857,7 +855,7 @@ if __name__ == "__main__":
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
     board = Board.parse_instance()
-    #board.values[0][1]='M'
+    #board.values[2][2]='M'
     #board.printBoard()
     print()
     initialState = BimaruState(board)
