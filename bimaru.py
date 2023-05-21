@@ -111,7 +111,7 @@ class Board:
         for x in range(hints_n):
             line = input()
             line = line.split('\t')
-            print(line)
+            #print(line)
             if line[3]!='W':
                 string_row[int(line[1])] = int(string_row[int(line[1])]) -1
                 string_column[int(line[2])] = int(string_column[int(line[2])]) -1
@@ -221,12 +221,12 @@ class Bimaru(Problem):
             i = 1
             for action in actions:
                 d = self.result(state, action)
-                print("Action #" + str(i))
-                d.board.printBoard()
-                print()
+                #print("Action #" + str(i))
+                #d.board.printBoard()
+                #print()
                 i+=1
 
-
+        print(actions)
         return np.asarray(actions)
 
     def result(self, state: BimaruState, action):
@@ -240,7 +240,7 @@ class Bimaru(Problem):
         rows = np.copy(state.board.rows)
         columns = np.copy(state.board.columns)
         boats = np.copy(state.board.boats)
-        hints = np.copy(state.board.boats)
+        hints = np.copy(state.board.hints)
         direction = action[0]                           # H (horizontal), V (vertical)
         x = int(action[1])                              #action = (direction, x, y, size)
         y = int(action[2])
@@ -291,6 +291,7 @@ class Bimaru(Problem):
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas de acordo com as regras do problema."""
         # TODO
+        return np.size(state.board.hints)==0
         pass
 
     def h(self, node: Node):
@@ -466,7 +467,6 @@ class Bimaru(Problem):
                 condition = False
 
             if (int(self.board.rows[x])-pieces<0):
-                print("fodasse " + str(pieces))
                 condition = False
 
             # Se não der, temos que repor o tabuleiro e retornar Falso (o barco não cabe)
@@ -857,8 +857,11 @@ if __name__ == "__main__":
     board = Board.parse_instance()
     #board.values[2][2]='M'
     #board.printBoard()
-    print()
+    #print()
     initialState = BimaruState(board)
     problem = Bimaru(board)
-    problem.actions(initialState)
+    problem.initial = initialState
+    #problem.actions(initialState)
+    result = breadth_first_tree_search(problem)
+    result.state.board.printBoard()
     pass
