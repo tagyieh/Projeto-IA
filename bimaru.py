@@ -47,10 +47,10 @@ class Board:
         """Devolve o valor na respetiva posição do tabuleiro."""
         return self.values[row, col]
 
-    
+    """
     def adjacent_vertical_values(self, row: int, col: int) -> (str, str):
-        """Devolve os valores imediatamente acima e abaixo,
-        respectivamente."""
+        Devolve os valores imediatamente acima e abaixo,
+        respectivamente.
         above = '~'
         below='~'
         if (row+1 < 10):
@@ -61,8 +61,8 @@ class Board:
         return (above, below)
         
     def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):
-        """Devolve os valores imediatamente à esquerda e à direita,
-        respectivamente."""
+        Devolve os valores imediatamente à esquerda e à direita,
+        respectivamente.
         left = '~'
         right='~'
         if (col+1 < 10):
@@ -71,7 +71,7 @@ class Board:
             left = self.values[row, col-1] 
 
         return (left, right)
-    
+    """
     @staticmethod
     def parse_instance():
         """Lê o test do standard input (stdin) que é passado como argumento
@@ -103,7 +103,6 @@ class Board:
         string_column = string_column.split('\t')
         string_column.remove("COLUMN")
         string_column = np.asarray(string_column)
-
         """
         Le as hints e comeca a preencher o tabuleiro
         """ 
@@ -116,7 +115,7 @@ class Board:
             print(line)
             if line[3]!='W':
                 string_row[int(line[1])] = int(string_row[int(line[1])]) -1
-                string_column[int(line[1])] = int(string_column[int(line[1])]) -1
+                string_column[int(line[2])] = int(string_column[int(line[2])]) -1
             if (line[3]!='C' and line[3]!='W'):
                 currentHint = np.array([int(line[1]), int(line[2]), line[3]])   #cria vetor de hint
                 hintsVec.append(currentHint)                                    #adiciona vetor a lista de hints
@@ -214,7 +213,7 @@ class Bimaru(Problem):
         """Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento."""
         board = state.board
-        actions = []
+        actions = [ ]
         # Vamos resolver primeiro as pistas
         if board.hints.size > 0:
             # Resolvemos uma pista e recebemos a lista de ações possíveis
@@ -274,7 +273,7 @@ class Bimaru(Problem):
             for i in range(1, size-1):
                 if (board[x, y+i]=='~'):
                     rows[x] = int(rows[x]) - 1
-                    columns[y+1] = int(columns[y+i]) - 1
+                    columns[y+i] = int(columns[y+i]) - 1
                     board[x, y+i]='m'                   #adiciona um middle
 
             if (board[x, y+size-1]=='~'):
@@ -344,7 +343,7 @@ class Bimaru(Problem):
                     condition = False
                     #TODO meter agua na row toda
                     oldPieces[i] = '.'
-                board.values[x+i][y] = 'm'
+                self.board.values[x+i][y] = 'm'
 
             self.board.values[x+size-1][y] = 'b'
             # Verificamos, ainda, se as pista lateral também permite por a peça terminal
@@ -388,7 +387,6 @@ class Bimaru(Problem):
             if (self.board.values[x+size-1][y] == 'T'):
                 pieces-=1
             
-
             # Verifica se as posiões que estão entre as pontas são vazias ou meios e se podemos por
             # a peça sem quebrar as pistas laterais
             for i in range(1,size-1):
@@ -402,7 +400,7 @@ class Bimaru(Problem):
                     condition = False
                     #TODO meter agua na row toda
                     oldPieces[i] = '.'
-                board.values[x-i][y] = 'm'
+                self.board.values[x-i][y] = 'm'
 
             self.board.values[x-size+1][y] = 't'
             # Verificamos, ainda, se as pista lateral também permite por a peça terminal
@@ -459,7 +457,7 @@ class Bimaru(Problem):
                     condition = False
                     #TODO meter agua na row toda
                     oldPieces[i] = '.'
-                board.values[x][y+i] = 'm'
+                self.board.values[x][y+i] = 'm'
 
             self.board.values[x][y+size-1] = 'r'
             # Verificamos, ainda, se as pista lateral também permite por a peça terminal
@@ -516,7 +514,7 @@ class Bimaru(Problem):
                     condition = False
                     #TODO meter agua na row toda
                     oldPieces[i] = '.'
-                board.values[x][y-i] = 'm'
+                self.board.values[x][y-i] = 'm'
 
             self.board.values[x][y-size+1] = 'l'
             # Verificamos, ainda, se as pista lateral também permite por a peça terminal
@@ -607,50 +605,230 @@ class Bimaru(Problem):
         return np.asarray(possibilities)
 
     def tryMiddle(self, hint):
-        x = hint[0]
-        y = hint[1]
+        x = int(hint[0])
+        y = int(hint[1])
         actions = []
-        board = self.board.values
+        board = self.board
         # Vamos começar por testar na horizontal esta forma: lMmr
         if (y-1>=0) and (y+2<10):
             pieces = 3
             condition = True
 
             # Vemos se as peças ao lado estao bem postas
-            if (board[x][y-1]=='L'):
+            if (board.values[x][y-1]=='L'):
                 pieces -= 1
-            elif board[x][y-1]!='~':
+            elif board.values[x][y-1]!='~':
                 condition = False
 
-            if (board[x][y+1]=='M'):
+            if (board.values[x][y+1]=='M'):
                 pieces -= 1
-            elif board[x][y+1]!='~':
+            elif board.values[x][y+1]!='~':
                 condition = False
 
-            if (board[x][y+2]=='R'):
+            if (board.values[x][y+2]=='R'):
                 pieces -= 1
-            elif board[x][y+2]!='~':
+            elif board.values[x][y+2]!='~':
                 condition = False
             
             # Se estiver tudo bem, entao podemos começar
-            if not (board.rows[x]-pieces<0) and condition:
+            if (int(board.rows[x])-pieces>=0) and condition:
                 oldPieces = []
-                oldPieces.append(board[x][y-1])
-                oldPieces.append(board[x][y])
-                oldPieces.append(board[x][y+1])
-                oldPieces.append(board[x][y+2])
-                board[x][y-1] = 'l'
-                board[x][y+1] = 'm'
-                board[x][y+2] = 'r'
-                if board.p():
+                oldPieces.append(board.values[x][y-1])
+                oldPieces.append(board.values[x][y])
+                oldPieces.append(board.values[x][y+1])
+                oldPieces.append(board.values[x][y+2])
+                board.values[x][y-1] = 'l'
+                board.values[x][y+1] = 'm'
+                board.values[x][y+2] = 'r'
+                if self.p():
                     action = ['H', x, y-1, 4]
                     actions.append(action)
                 # Repor  o tabuleiro  
-                board[x][y-1] = oldPieces[0]
-                board[x][y+1] = oldPieces[2]
-                board[x][y+2] = oldPieces[3]
+                board.values[x][y-1] = oldPieces[0]
+                board.values[x][y+1] = oldPieces[2]
+                board.values[x][y+2] = oldPieces[3]
 
+        #lmMr
+        if (y-2>=0) and (y+1<10):
+            pieces = 3
+            condition = True
+
+            # Vemos se as peças ao lado estao bem postas
+            if (board.values[x][y-2]=='L'):
+                pieces -= 1
+            elif board.values[x][y-2]!='~':
+                condition = False
+
+            if (board.values[x][y-1]=='M'):
+                pieces -= 1
+            elif board.values[x][y-1]!='~':
+                condition = False
+
+            if (board.values[x][y+1]=='R'):
+                pieces -= 1
+            elif board.values[x][y+1]!='~':
+                condition = False
+            
+            # Se estiver tudo bem, entao podemos começar
+            if (int(board.rows[x])-pieces>=0) and condition:
+                oldPieces = []
+                oldPieces.append(board.values[x][y-2])
+                oldPieces.append(board.values[x][y-1])
+                oldPieces.append(board.values[x][y])
+                oldPieces.append(board.values[x][y+1])
+                board.values[x][y-2] = 'l'
+                board.values[x][y-1] = 'm'
+                board.values[x][y+1] = 'r'
+                if self.p():
+                    action = ['H', x, y-2, 4]
+                    actions.append(action)
+                # Repor  o tabuleiro  
+                board.values[x][y-2] = oldPieces[0]
+                board.values[x][y-1] = oldPieces[1]
+                board.values[x][y+1] = oldPieces[3]
+        
         # Testar agora lMr
+        if (y-1>=0) and (y+1<10):
+            pieces = 2
+            condition = True
+
+            # Vemos se as peças ao lado estao bem postas
+            if (board.values[x][y-1]=='L'):
+                pieces -= 1
+            elif board.values[x][y-1]!='~':
+                condition = False
+
+            if (board.values[x][y+1]=='R'):
+                pieces -= 1
+            elif board.values[x][y+1]!='~':
+                condition = False
+            
+            # Se estiver tudo bem, entao podemos começar
+            if (int(board.rows[x])-pieces>=0) and condition:
+                oldPieces = []
+                oldPieces.append(board.values[x][y-1])
+                oldPieces.append(board.values[x][y])
+                oldPieces.append(board.values[x][y+1])
+                board.values[x][y-1] = 'l'
+                board.values[x][y+1] = 'r'
+                if self.p():
+                    action = ['H', x, y-1, 3]
+                    actions.append(action)
+                # Repor  o tabuleiro  
+                board.values[x][y-1] = oldPieces[0]
+                board.values[x][y+1] = oldPieces[2]
+
+        #VERTICAL WISE
+        # Vamos começar por testar na vertical esta forma: tMmb
+        if (x-1>=0) and (x+2<10):
+            pieces = 3
+            condition = True
+
+            # Vemos se as peças ao lado estao bem postas
+            if (board.values[x-1][y]=='T'):
+                pieces -= 1
+            elif board.values[x-1][y]!='~':
+                condition = False
+
+            if (board.values[x+1][y]=='M'):
+                pieces -= 1
+            elif board.values[x+1][y]!='~':
+                condition = False
+
+            if (board.values[x+2][y]=='B'):
+                pieces -= 1
+            elif board.values[x+2][y]!='~':
+                condition = False
+            
+            # Se estiver tudo bem, entao podemos começar
+            if (int(board.columns[y])-pieces>=0) and condition:
+                oldPieces = []
+                oldPieces.append(board.values[x-1][y])
+                oldPieces.append(board.values[x][y])
+                oldPieces.append(board.values[x+1][y])
+                oldPieces.append(board.values[x+2][y])
+                board.values[x-1][y] = 't'
+                board.values[x+1][y] = 'm'
+                board.values[x+2][y] = 'b'
+                if self.p():
+                    action = ['V', x-1, y, 4]
+                    actions.append(action)
+                # Repor  o tabuleiro  
+                board.values[x-1][y] = oldPieces[0]
+                board.values[x+1][y] = oldPieces[2]
+                board.values[x+2][y] = oldPieces[3]
+
+        #tmMb
+        if (x-2>=0) and (x+1<10):
+            pieces = 3
+            condition = True
+
+            # Vemos se as peças ao lado estao bem postas
+            if (board.values[x-2][y]=='T'):
+                pieces -= 1
+            elif board.values[x-2][y]!='~':
+                condition = False
+
+            if (board.values[x-1][y]=='M'):
+                pieces -= 1
+            elif board.values[x-1][y]!='~':
+                condition = False
+
+            if (board.values[x+1][y]=='B'):
+                pieces -= 1
+            elif board.values[x+1][y]!='~':
+                condition = False
+            
+            # Se estiver tudo bem, entao podemos começar
+            if (int(board.columns[y])-pieces>=0) and condition:
+                oldPieces = []
+                oldPieces.append(board.values[x-2][y])
+                oldPieces.append(board.values[x-1][y])
+                oldPieces.append(board.values[x][y])
+                oldPieces.append(board.values[x+1][y])
+                board.values[x-2][y] = 't'
+                board.values[x-1][y] = 'm'
+                board.values[x+1][y] = 'b'
+                if self.p():
+                    action = ['V', x-2, y, 4]
+                    actions.append(action)
+                # Repor  o tabuleiro  
+                board.values[x-2][y] = oldPieces[0]
+                board.values[x-1][y] = oldPieces[1]
+                board.values[x+1][y] = oldPieces[3]
+        
+        # Testar agora tMb
+        if (x-1>=0) and (x+1<10):
+            pieces = 2
+            condition = True
+
+            # Vemos se as peças ao lado estao bem postas
+            if (board.values[x-1][y]=='T'):
+                pieces -= 1
+            elif board.values[x-1][y]!='~':
+                condition = False
+
+            if (board.values[x+1][y]=='B'):
+                pieces -= 1
+            elif board.values[x+1][y]!='~':
+                condition = False
+            
+            # Se estiver tudo bem, entao podemos começar
+            if (int(board.columns[y])-pieces>=0) and condition:
+                oldPieces = []
+                oldPieces.append(board.values[x-1][y])
+                oldPieces.append(board.values[x][y])
+                oldPieces.append(board.values[x+1][y])
+                board.values[x][y-1] = 't'
+                board.values[x][y+1] = 'b'
+                if self.p():
+                    action = ['V', x-1, y, 3]
+                    actions.append(action)
+                # Repor  o tabuleiro  
+                board.values[x-1][y] = oldPieces[0]
+                board.values[x+1][y] = oldPieces[2]
+
+        return np.asarray(actions)
         
 
     def solveHints(self):
@@ -668,7 +846,7 @@ class Bimaru(Problem):
             return self.tryLeft(hint)
 
         else:
-            self.tryMiddle(hint)
+            return self.tryMiddle(hint)
     # TODO: outros metodos da classe
 
 
