@@ -112,7 +112,6 @@ class Board:
         """
         values = []
         boats = [4,3,2,1]
-        #hash_map = np.full(100, -1, dtype=int)
 
         for i in range(10):
             values_line = np.full(shape=10,fill_value="~")    #preenche o tabuleiro com vazios
@@ -262,21 +261,94 @@ class Bimaru(Problem):
             size = self.maxSize(board)
             if size == 0:
                 return []
-            for x in range(10):
-                for y in range(10):
+            actionChosen = False
+            for x in range(1,9):
+                for y in range(1,9):
                     if board.values[x][y] != '~':
                         continue
                     if size==1 and board.validPos(x,y) and int(board.rows[x])!=0 and \
                           int(board.columns[y])!=0:
+                        actionChosen = True
                         action = ['C',x,y,size]
                         actions.append(action)
                         continue
                     if (x+size-1)<10 and self.tryVertical(x,y,size,board):
+                        actionChosen = True
                         action = ['V',x,y,size]
                         actions.append(action)
                     if (y+size-1)<10 and self.tryHorizontal(x,y,size,board):
+                        actionChosen = True
                         action = ['H',x,y,size]
                         actions.append(action)
+
+            if True:
+                for x in range(1,9):
+                    condition1 = True
+                    if board.values[x][0] != '~':
+                        condition1 = False
+                    if condition1 and size==1 and board.validPos(x,0) and int(board.rows[x])!=0 and \
+                        int(board.columns[0])!=0:
+                        action = ['C',x,0,size]
+                        actions.append(action)
+                        actionChosen = True
+                        condition1 = False
+                    if condition1 and (x+size-1)<10 and self.tryVertical(x,0,size,board):
+                        action = ['V',x,0,size]
+                        actions.append(action)
+                        actionChosen = True
+                    if condition1 and (0+size-1)<10 and self.tryHorizontal(x,0,size,board):
+                        action = ['H',x,0,size]
+                        actions.append(action)
+                        actionChosen = True
+
+                    if board.values[x][9] != '~':
+                            continue
+                    if size==1 and board.validPos(x,9) and int(board.rows[x])!=0 and \
+                        int(board.columns[9])!=0:
+                        action = ['C',x,9,size]
+                        actions.append(action)
+                        actionChosen = True
+                        continue
+                    if (x+size-1)<10 and self.tryVertical(x,9,size,board):
+                        action = ['V',x,9,size]
+                        actions.append(action)
+                        actionChosen = True
+                    if (9+size-1)<10 and self.tryHorizontal(x,9,size,board):
+                        action = ['H',x,9,size]
+                        actions.append(action)
+                        actionChosen = True
+
+            if True:
+                for y in range(10):
+                    condition1 = True
+                    if board.values[0][y] != '~':
+                        condition1 = False
+                    if condition1 and size==1 and board.validPos(0,y) and int(board.rows[0])!=0 and \
+                        int(board.columns[y])!=0:
+                        action = ['C',0,y,size]
+                        actions.append(action)
+                        condition1 = False
+                    if condition1 and (0+size-1)<10 and self.tryVertical(0,y,size,board):
+                        action = ['V',0,y,size]
+                        actions.append(action)
+                    if condition1 and (y+size-1)<10 and self.tryHorizontal(0,y,size,board):
+                        action = ['H',0,y,size]
+                        actions.append(action)
+
+                    if board.values[9][y] != '~':
+                        continue
+                    if size==1 and board.validPos(9,y) and int(board.rows[9])!=0 and \
+                        int(board.columns[y])!=0:
+                        action = ['C',9,y,size]
+                        actions.append(action)
+                        continue
+                    if (9+size-1)<10 and self.tryVertical(9,y,size,board):
+                        action = ['V',9,y,size]
+                        actions.append(action)
+                    if (y+size-1)<10 and self.tryHorizontal(9,y,size,board):
+                        action = ['H',9,y,size]
+                        actions.append(action)
+
         """i=1
         for action in actions:
             d = self.result(state, action)
@@ -303,7 +375,7 @@ class Bimaru(Problem):
             return False
         for i in range(size):
             if int(board.columns[y+i]) == 0:
-                if board.values[x+i][y] == '~':
+                if board.values[x][y+i] == '~':
                     board.values[x][y+i] = '.'
                 return False
             if not board.validPos(x,y+i):
@@ -411,7 +483,8 @@ class Bimaru(Problem):
         oldPieces = np.full(shape=4,fill_value="~")
         # Verifica se o tabuleiro esta apto para receber o navio
         if (piece == 'T' ) and (x+size-1<10) and \
-            (board.values[x+size-1][y] == '~' or board.values[x+size-1][y] == 'B'):
+            (board.values[x+size-1][y] == 'B' or (board.values[x+size-1][y] == '~' and \
+                                                  int(board.rows[x+size-1]) > 0)):
             # Inicializa as pecas antigas com as pecas nas posicoes atuais do tabuleiro
             oldPieces[0] = piece
             oldPieces[1] = board.values[x+1,y]
@@ -478,7 +551,8 @@ class Bimaru(Problem):
             return result  
         
         if (piece == 'B' ) and (x-size+1>=0) and \
-            (board.values[x-size+1][y] == '~' or board.values[x-size+1][y] == 'T'):
+            (board.values[x-size+1][y] == 'T' or (board.values[x-size+1][y] == '~'  and \
+                                                  int(board.rows[x-size+1]) > 0)):
             # Inicializa as peças antigas com as peças nas posições atuais do tabuleiro
             oldPieces[0] = piece
             oldPieces[1] = board.values[x-1][y]
@@ -541,7 +615,8 @@ class Bimaru(Problem):
             return result 
 
         if (piece == 'L' ) and (y+size-1<10) and \
-            (board.values[x][y+size-1] == '~' or board.values[x][y+size-1] == 'R'):
+            (board.values[x][y+size-1] == 'R' or (board.values[x][y+size-1] == '~'  and \
+                                                  int(board.columns[y+size-1]) > 0)):
             # Inicializa as peças antigas com as peças nas posições atuais do tabuleiro
             oldPieces[0] = piece
             oldPieces[1] = board.values[x][y+1]
@@ -603,7 +678,8 @@ class Bimaru(Problem):
             return result  
         
         if (piece == 'R' ) and (y-size+1>=0) and \
-            (board.values[x][y-size+1] == '~' or board.values[x][y-size+1] == 'L'):
+            (board.values[x][y-size+1] == 'L' or (board.values[x][y-size+1] == '~' and \
+                                                  int(board.columns[y-size+1]) > 0)):
             # Inicializa as peças antigas com as peças nas posições atuais do tabuleiro
             oldPieces[0] = piece
             oldPieces[1] = board.values[x][y-1]
@@ -668,7 +744,7 @@ class Bimaru(Problem):
         piece = hint[2].rstrip("\r")
         possibilities = []
         for i in range(2,5):             #verifica o maior size de boat que podemos meter
-            if ( self.boatFits(int(x),int(y),piece,i,board) ):
+            if (board.boats[i-1] > 0 and self.boatFits(int(x),int(y),piece,i,board) ):
                 possibility = np.full(shape=4,fill_value="~")
                 possibility[0] = 'V'                        #vertical
                 possibility[1] = hint[0]
@@ -683,7 +759,7 @@ class Bimaru(Problem):
         piece = hint[2].rstrip("\r")
         possibilities = []
         for i in range(1,5):             #verifica o maior size de boat que podemos meter
-            if (self.boatFits(int(x),int(y),piece,i,board)):
+            if (board.boats[i-1] > 0 and self.boatFits(int(x),int(y),piece,i,board)):
                 possibility = np.full(shape=4,fill_value="~")
                 possibility[0] = 'V'                        #vertical
                 possibility[1] = int(hint[0]) - i +1 #pode ser -4+2=-3 ou seja no maximo vai ter 3 para cima
@@ -698,7 +774,7 @@ class Bimaru(Problem):
         piece = hint[2].rstrip("\r")
         possibilities = []
         for i in range(1,5):             #verifica o maior size de boat que podemos meter
-            if (self.boatFits(int(x),int(y),piece,i, board)):
+            if (board.boats[i-1] > 0 and self.boatFits(int(x),int(y),piece,i, board)):
                 possibility = np.full(shape=4,fill_value="~")
                 possibility[0] = 'H'                        #horizontal
                 possibility[1] = hint[0]
@@ -713,7 +789,7 @@ class Bimaru(Problem):
         piece = hint[2].rstrip("\r")
         possibilities = []
         for i in range(1,5):             #verifica o maior size de boat que podemos meter
-            if (self.boatFits(int(x),int(y),piece,i,board)):
+            if (board.boats[i-1] > 0 and self.boatFits(int(x),int(y),piece,i,board)):
                 possibility = np.full(shape=4,fill_value="~")
                 possibility[0] = 'H'                        #vertical
                 possibility[1] = hint[0]
@@ -727,7 +803,7 @@ class Bimaru(Problem):
         y = int(hint[1])
         actions = []
         # Vamos começar por testar na horizontal esta forma: lMmr
-        if (y-1>=0) and (y+2<10):
+        if (y-1>=0) and (y+2<10) and board.boats[3] > 0:
             pieces = 3
             condition = True
 
@@ -736,21 +812,21 @@ class Bimaru(Problem):
                 pieces -= 1
             elif board.values[x][y-1]!='~':
                 condition = False
-            elif board.columns[y-1]==0:
+            elif int(board.columns[y-1])==0:
                 condition = False
 
             if (board.values[x][y+1]=='M'):
                 pieces -= 1
             elif board.values[x][y+1]!='~':
                 condition = False
-            elif board.columns[y+1]==0:
+            elif int(board.columns[y+1])==0:
                 condition = False
 
             if (board.values[x][y+2]=='R'):
                 pieces -= 1
             elif board.values[x][y+2]!='~':
                 condition = False
-            elif board.columns[y+2]==0:
+            elif int(board.columns[y+2])==0:
                 condition = False
             
             # Se estiver tudo bem, entao podemos começar
@@ -772,7 +848,7 @@ class Bimaru(Problem):
                 board.values[x][y+2] = oldPieces[3]
 
         #lmMr
-        if (y-2>=0) and (y+1<10):
+        if (y-2>=0) and (y+1<10) and board.boats[3] > 0:
             pieces = 3
             condition = True
 
@@ -781,21 +857,21 @@ class Bimaru(Problem):
                 pieces -= 1
             elif board.values[x][y-2]!='~':
                 condition = False
-            elif board.columns[y-2]==0:
+            elif int(board.columns[y-2])==0:
                 condition = False
 
             if (board.values[x][y-1]=='M'):
                 pieces -= 1
             elif board.values[x][y-1]!='~':
                 condition = False
-            elif board.columns[y-1]==0:
+            elif int(board.columns[y-1])==0:
                 condition = False
 
             if (board.values[x][y+1]=='R'):
                 pieces -= 1
             elif board.values[x][y+1]!='~':
                 condition = False
-            elif board.columns[y+1]==0:
+            elif int(board.columns[y+1])==0:
                 condition = False
             
             # Se estiver tudo bem, entao podemos começar
@@ -817,7 +893,7 @@ class Bimaru(Problem):
                 board.values[x][y+1] = oldPieces[3]
         
         # Testar agora lMr
-        if (y-1>=0) and (y+1<10):
+        if (y-1>=0) and (y+1<10) and board.boats[2] > 0:
             pieces = 2
             condition = True
 
@@ -826,14 +902,14 @@ class Bimaru(Problem):
                 pieces -= 1
             elif board.values[x][y-1]!='~':
                 condition = False
-            elif board.columns[y-1]==0:
+            elif int(board.columns[y-1])==0:
                 condition = False
 
             if (board.values[x][y+1]=='R'):
                 pieces -= 1
             elif board.values[x][y+1]!='~':
                 condition = False
-            elif board.columns[y+1]==0:
+            elif int(board.columns[y+1])==0:
                 condition = False
             
             # Se estiver tudo bem, entao podemos começar
@@ -853,7 +929,7 @@ class Bimaru(Problem):
 
         #VERTICAL WISE
         # Vamos começar por testar na vertical esta forma: tMmb
-        if (x-1>=0) and (x+2<10):
+        if (x-1>=0) and (x+2<10) and board.boats[3] > 0:
             pieces = 3
             condition = True
 
@@ -862,21 +938,21 @@ class Bimaru(Problem):
                 pieces -= 1
             elif board.values[x-1][y]!='~':
                 condition = False
-            elif board.rows[x-1]==0:
+            elif int(board.rows[x-1])==0:
                 condition = False
 
             if (board.values[x+1][y]=='M'):
                 pieces -= 1
             elif board.values[x+1][y]!='~':
                 condition = False
-            elif board.rows[x+1]==0:
+            elif int(board.rows[x+1])==0:
                 condition = False
 
             if (board.values[x+2][y]=='B'):
                 pieces -= 1
             elif board.values[x+2][y]!='~':
                 condition = False
-            elif board.rows[x+2]==0:
+            elif int(board.rows[x+2])==0:
                 condition = False
             
             # Se estiver tudo bem, entao podemos começar
@@ -898,7 +974,7 @@ class Bimaru(Problem):
                 board.values[x+2][y] = oldPieces[3]
 
         #tmMb
-        if (x-2>=0) and (x+1<10):
+        if (x-2>=0) and (x+1<10) and board.boats[3] > 0:
             pieces = 3
             condition = True
 
@@ -907,21 +983,21 @@ class Bimaru(Problem):
                 pieces -= 1
             elif board.values[x-2][y]!='~':
                 condition = False
-            elif board.rows[x-2]==0:
+            elif int(board.rows[x-2])==0:
                 condition = False
 
             if (board.values[x-1][y]=='M'):
                 pieces -= 1
             elif board.values[x-1][y]!='~':
                 condition = False
-            elif board.rows[x-1]==0:
+            elif int(board.rows[x-1])==0:
                 condition = False
 
             if (board.values[x+1][y]=='B'):
                 pieces -= 1
             elif board.values[x+1][y]!='~':
                 condition = False
-            elif board.rows[x+1]==0:
+            elif int(board.rows[x+1])==0:
                 condition = False
             
             # Se estiver tudo bem, entao podemos começar
@@ -943,7 +1019,7 @@ class Bimaru(Problem):
                 board.values[x+1][y] = oldPieces[3]
         
         # Testar agora tMb
-        if (x-1>=0) and (x+1<10):
+        if (x-1>=0) and (x+1<10) and board.boats[2] > 0:
             pieces = 2
             condition = True
 
@@ -952,14 +1028,14 @@ class Bimaru(Problem):
                 pieces -= 1
             elif board.values[x-1][y]!='~':
                 condition = False
-            elif board.rows[x-1]==0:
+            elif int(board.rows[x-1])==0:
                 condition = False
 
             if (board.values[x+1][y]=='B'):
                 pieces -= 1
             elif board.values[x+1][y]!='~':
                 condition = False
-            elif board.rows[x+1]==0:
+            elif int(board.rows[x+1])==0:
                 condition = False
             
             # Se estiver tudo bem, entao podemos começar
@@ -1018,7 +1094,7 @@ if __name__ == "__main__":
     #print()
     problem = Bimaru(board)
     #problem.actions(problem.initial)
-    result = breadth_first_tree_search(problem)
+    result = depth_first_tree_search(problem)
     #print("-------- CORRECT ONE ---------")
     result.state.board.replaceTilde()
     #result.state.board.printBoard()
