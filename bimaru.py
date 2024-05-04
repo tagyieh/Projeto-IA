@@ -5,7 +5,6 @@
 # Grupo 40:
 # 102823 Beatriz Paulo
 # 103726 Tomás Fonseca
-
 import sys
 import numpy as np
 from search import (
@@ -36,12 +35,14 @@ class BimaruState:
 class Board:
     """Representação interna de um tabuleiro de Bimaru."""
     
-    def __init__(self, rows, columns, values, boats, hints): 
+    def __init__(self, rows, columns, values, boats, hints, free, ofree): 
         self.rows = rows
         self.columns = columns
         self.values = values
         self.boats = boats
         self.hints = hints
+        self.free = free
+        self.ofree = ofree
 
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
@@ -76,30 +77,36 @@ class Board:
         topLeft = '~'
         bottomRight = '~'
         bottomLeft = '~'
-        if (x-1>=0) and (y-1>=0):
-            topLeft = self.values[x-1][y-1]
-        if (x-1>=0) and (y+1<10):
-            topRight = self.values[x-1][y+1]
-        if (x+1<10) and (y-1>=0):
-            bottomLeft = self.values[x+1][y-1]
-        if (x+1<10) and (y+1<10):
-            bottomRight = self.values[x+1][y+1]
+        if (x-1>=0):
+            if (y-1>=0):
+                topLeft = self.values[x-1][y-1]
+            if (y+1<10):
+                topRight = self.values[x-1][y+1]
+        if (x+1<10):
+            if (y-1>=0):
+                bottomLeft = self.values[x+1][y-1]
+            if (y+1<10):
+                bottomRight = self.values[x+1][y+1]
         return (topRight, topLeft, bottomRight, bottomLeft)
 
     def isPlaceable(self,piece):
         return piece=='W' or piece=='~' or piece=='.'
 
     def validPos(self,x,y):
-        sides = self.adjacent_vertical_values(x,y)
-        topAndBottom = self.adjacent_horizontal_values(x,y)
         diagonals = self.adjacent_diagonal_values(x,y)
-        if board.values[x][y] == '~' and \
-        self.isPlaceable(sides[0]) and self.isPlaceable(sides[1]) and \
-        self.isPlaceable(topAndBottom[0]) and self.isPlaceable(topAndBottom[1]) and \
-        self.isPlaceable(diagonals[0]) and self.isPlaceable(diagonals[1]) and \
-        self.isPlaceable(diagonals[2]) and self.isPlaceable(diagonals[3]):
-            return True
-        return False
+        if \
+        not self.isPlaceable(diagonals[0]) or not self.isPlaceable(diagonals[1]) or \
+        not self.isPlaceable(diagonals[2]) or not self.isPlaceable(diagonals[3]):
+            return False
+        sides = self.adjacent_vertical_values(x,y)
+        if board.values[x][y] != '~' or \
+        not self.isPlaceable(sides[0]) or not self.isPlaceable(sides[1]):
+            return False
+        topAndBottom = self.adjacent_horizontal_values(x,y)    
+        if \
+        not self.isPlaceable(topAndBottom[0]) or not self.isPlaceable(topAndBottom[1]):
+            return False
+        return True
 
     @staticmethod
     def parse_instance():
@@ -124,6 +131,8 @@ class Board:
         string_row = string_row.split('\t')
         string_row.remove("ROW")
         string_row = np.asarray(string_row)
+        for i in range(10):
+            string_row[i] = string_row[i].rstrip('\r')
         """
         Le e cria a lista com os valores de cada coluna 
         """
@@ -131,6 +140,8 @@ class Board:
         string_column = string_column.split('\t')
         string_column.remove("COLUMN")
         string_column = np.asarray(string_column)
+        for i in range(10):
+            string_column[i] = string_column[i].rstrip('\r')
         """
         Le as hints e comeca a preencher o tabuleiro
         """ 
@@ -152,7 +163,13 @@ class Board:
             values[int(line[1]), int(line[2])] = line[3]                        #adiciona hint ao tabuleiro
         
         hintsVec = np.asarray(hintsVec)
-        board = Board(string_row, string_column, values, boats, hintsVec)
+        key = [*range(11,19)] + [*range(21,29)] + [*range(31,39)] + [*range(41,49)] + [*range(51,59)] + [*range(61,69)] + [*range(71,79)] +[*range(81,89)]
+        valuesD = range(64)
+        free = dict(zip(key,valuesD))
+        okey = [*range(0,10)] + [10,19,20,29,30,39,40,49,50,59,60,69,70,79,80,89] + [*range(90,100)]
+        valuesD1 = range(36)
+        ofree = dict(zip(okey,valuesD1))
+        board = Board(string_row, string_column, values, np.asarray(boats), hintsVec, free, ofree)
         return board 
 
     def printBoard(self):
@@ -261,124 +278,164 @@ class Bimaru(Problem):
             size = self.maxSize(board)
             if size == 0:
                 return []
-            actionChosen = False
-            for x in range(1,9):
-                for y in range(1,9):
-                    if board.values[x][y] != '~':
-                        continue
-                    if size==1 and board.validPos(x,y) and int(board.rows[x])!=0 and \
-                          int(board.columns[y])!=0:
-                        actionChosen = True
-                        action = ['C',x,y,size]
-                        actions.append(action)
-                        continue
-                    if (x+size-1)<10 and self.tryVertical(x,y,size,board):
-                        actionChosen = True
-                        action = ['V',x,y,size]
-                        actions.append(action)
-                    if (y+size-1)<10 and self.tryHorizontal(x,y,size,board):
-                        actionChosen = True
-                        action = ['H',x,y,size]
-                        actions.append(action)
-
-            if True:
-                for x in range(1,9):
-                    condition1 = True
-                    if board.values[x][0] != '~':
-                        condition1 = False
-                    if condition1 and size==1 and board.validPos(x,0) and int(board.rows[x])!=0 and \
-                        int(board.columns[0])!=0:
-                        action = ['C',x,0,size]
-                        actions.append(action)
-                        actionChosen = True
-                        condition1 = False
-                    if condition1 and (x+size-1)<10 and self.tryVertical(x,0,size,board):
-                        action = ['V',x,0,size]
-                        actions.append(action)
-                        actionChosen = True
-                    if condition1 and (0+size-1)<10 and self.tryHorizontal(x,0,size,board):
-                        action = ['H',x,0,size]
-                        actions.append(action)
-                        actionChosen = True
-
-                    if board.values[x][9] != '~':
+            
+            if size==1:
+                toDelete = []
+                for coord in board.free:
+                        y = coord%10
+                        x = coord//10
+                        if board.values[x][y] != '~':
+                            toDelete.append(x*10+y)
                             continue
-                    if size==1 and board.validPos(x,9) and int(board.rows[x])!=0 and \
-                        int(board.columns[9])!=0:
-                        action = ['C',x,9,size]
-                        actions.append(action)
-                        actionChosen = True
-                        continue
-                    if (x+size-1)<10 and self.tryVertical(x,9,size,board):
-                        action = ['V',x,9,size]
-                        actions.append(action)
-                        actionChosen = True
-                    if (9+size-1)<10 and self.tryHorizontal(x,9,size,board):
-                        action = ['H',x,9,size]
-                        actions.append(action)
-                        actionChosen = True
+                        elif int(board.columns[y])==0 or int(board.rows[x])==0:
+                            board.values[x,y]='.'
+                            toDelete.append(x*10+y)
+                            continue
+                        elif board.validPos(x,y):
+                            actions.append(['C',x,y,size])
+                        else:
+                            toDelete.append(x*10+y)
+                board.free = {key: value for key, value in board.free.items() if key not in toDelete}
 
-            if True:
-                for y in range(10):
-                    condition1 = True
-                    if board.values[0][y] != '~':
-                        condition1 = False
-                    if condition1 and size==1 and board.validPos(0,y) and int(board.rows[0])!=0 and \
-                        int(board.columns[y])!=0:
-                        action = ['C',0,y,size]
-                        actions.append(action)
-                        condition1 = False
-                    if condition1 and (0+size-1)<10 and self.tryVertical(0,y,size,board):
-                        action = ['V',0,y,size]
-                        actions.append(action)
-                    if condition1 and (y+size-1)<10 and self.tryHorizontal(0,y,size,board):
-                        action = ['H',0,y,size]
-                        actions.append(action)
+                toDelete = []
+                for coord in board.ofree:
+                    x = coord//10
+                    y = coord%10
+                    if x==0:
+                        if board.values[0][y] != '~':
+                            toDelete.append(coord)
+                        elif int(board.columns[y])==0 or int(board.rows[0])==0:
+                            toDelete.append(coord)
+                        elif board.validPos(0,y):
+                            action = ['C',0,y,size]
+                            actions.append(action)
+                        else:
+                            toDelete.append(coord)
+                    elif x==9:
+                        if board.values[9][y] != '~':
+                            toDelete.append(coord)
+                        elif int(board.columns[y])==0 or int(board.rows[9])==0:
+                            toDelete.append(coord)
+                            board.values[9,y]='.'
+                        elif board.validPos(9,y):
+                            action = ['C',9,y,size]
+                            actions.append(action)
+                        else:
+                            toDelete.append(coord)
+                    if y==0:
+                        if board.values[x][0] != '~':
+                            toDelete.append(coord)
+                            pass
+                        elif int(board.columns[0])==0 or int(board.rows[x])==0:
+                            toDelete.append(coord)
+                            board.values[x,0] = '.'
+                        elif board.validPos(x,0):
+                            action = ['C',x,0,size]
+                            actions.append(action)
+                        else:
+                            toDelete.append(coord)
+                    elif y==9:
+                        if board.values[x][9] != '~':
+                                toDelete.append(coord)
+                                pass
+                        elif int(board.columns[9])==0 or int(board.rows[x])==0:
+                            toDelete.append(coord)
+                            board.values[x,9] = '.'
+                        elif board.validPos(x,9):
+                            action = ['C',x,9,size]
+                            actions.append(action)
+                        else:
+                            toDelete.append(coord)
+                board.ofree = {key: value for key, value in board.ofree.items() if key not in toDelete}
+            else:
+                toDelete = []
+                for coord in board.free:
+                    x = coord//10
+                    y = coord%10
+                    if (x + size - 1) < 10 and int(board.columns[y]) - size >= 0 and self.tryVertical(x, y, size, board, toDelete):
+                        actions.append(['V', x, y, size])
+                    if (y + size - 1) < 10 and int(board.rows[x]) - size >= 0 and self.tryHorizontal(x, y, size, board, toDelete):
+                        actions.append(['H', x, y, size])
+                board.free = {key: value for key, value in board.free.items() if key not in toDelete}
 
-                    if board.values[9][y] != '~':
-                        continue
-                    if size==1 and board.validPos(9,y) and int(board.rows[9])!=0 and \
-                        int(board.columns[y])!=0:
-                        action = ['C',9,y,size]
-                        actions.append(action)
-                        continue
-                    if (9+size-1)<10 and self.tryVertical(9,y,size,board):
-                        action = ['V',9,y,size]
-                        actions.append(action)
-                    if (y+size-1)<10 and self.tryHorizontal(9,y,size,board):
-                        action = ['H',9,y,size]
-                        actions.append(action)
+                toDelete = []
+                order = sorted(board.ofree.keys(), key=lambda x: 90-(x%10*100))
+                
+                for coord in order:
+                    x = coord//10
+                    y = coord%10
+                    if y==9:
+                        if board.values[x][9] != '~':
+                            toDelete.append(coord)
+                        else:
+                            if (x+size-1)<10 and int(board.columns[9]) - size >= 0 and self.tryVertical(x,9,size,board, toDelete):
+                                action = ['V',x,9,size]
+                                actions.append(action)
+                                
+                            if (9+size-1)<10 and int(board.rows[x]) - size >= 0 and self.tryHorizontal(x,9,size,board, toDelete):
+                                action = ['H',x,9,size]
+                                actions.append(action)
+                            
+                    elif y==0:
+                        if board.values[x][0] != '~':
+                            toDelete.append(coord)
+                        else:
+                            if (x+size-1)<10 and int(board.columns[0]) - size >= 0 and self.tryVertical(x,0,size,board, toDelete):
+                                action = ['V',x,0,size]
+                                actions.append(action)
+                            
+                            if (0+size-1)<10 and int(board.rows[x]) - size >= 0 and self.tryHorizontal(x,0,size,board, toDelete):
+                                action = ['H',x,0,size]
+                                actions.append(action)
+                    if x==9:
+                        if board.values[9][y] != '~':
+                            toDelete.append(coord)
+                        else:
+                            if (9+size-1)<10 and int(board.columns[y]) - size >= 0 and self.tryVertical(9,y,size,board, toDelete):
+                                action = ['V',9,y,size]
+                                actions.append(action)
+                            if (y+size-1)<10 and int(board.rows[9]) - size >= 0 and self.tryHorizontal(9,y,size,board, toDelete):
+                                action = ['H',9,y,size]
+                                actions.append(action)
 
-        """i=1
-        for action in actions:
-            d = self.result(state, action)
-            print("Action #" + str(i))
-            d.board.printBoard()
-            print()
-            i+=1"""
-        return np.asarray(actions)
+                    elif x==0:
+                        if board.values[0][y] != '~':
+                            toDelete.append(coord)
+                        else:
+                            if (0+size-1)<10 and int(board.columns[y]) - size >= 0 and self.tryVertical(0,y,size,board, toDelete):
+                                action = ['V',0,y,size]
+                                actions.append(action)
+                            if (y+size-1)<10 and int(board.rows[0]) - size >= 0 and self.tryHorizontal(0,y,size,board, toDelete):
+                                action = ['H',0,y,size]
+                                actions.append(action)
+                    
+                board.ofree = {key: value for key, value in board.ofree.items() if key not in toDelete}
+        return reversed(actions)
 
-    def tryVertical(self,x,y,size,board):
-        if int(board.columns[y]) - size < 0:
-            return False
+    def sorter(self, action):
+        return abs(50 - int(action[1])*10 - int(action[2]))
+    
+    def isPlaceable(self,piece):
+        return piece=='W' or piece=='~' or piece=='.'
+
+    def tryVertical(self,x,y,size,board,toDelete):
         for i in range(size):
             if int(board.rows[x+i]) == 0:
-                if board.values[x+i][y] == '~':
-                    board.values[x+i][y] = '.'
+                toDelete.append((x+i)*10+y)
                 return False
             if not board.validPos(x+i,y):
+                toDelete.append((x+i)*10+y)
                 return False
+        
         return True
     
-    def tryHorizontal(self,x,y,size,board):
-        if int(board.rows[x]) - size < 0:
-            return False
+    def tryHorizontal(self,x,y,size,board,toDelete):
         for i in range(size):
             if int(board.columns[y+i]) == 0:
-                if board.values[x][y+i] == '~':
-                    board.values[x][y+i] = '.'
+                toDelete.append(x*10+y+i)
                 return False
             if not board.validPos(x,y+i):
+                toDelete.append(x*10+y+i)
                 return False
         return True
     
@@ -393,50 +450,59 @@ class Bimaru(Problem):
         rows = np.copy(state.board.rows)
         columns = np.copy(state.board.columns)
         boats = np.copy(state.board.boats)
+        free = dict(state.board.free)
         #hints = np.copy(state.board.hints)
+        ofree = dict(state.board.ofree)
         direction = action[0]                           # H (horizontal), V (vertical)
         x = int(action[1])                              #action = (direction, x, y, size)
         y = int(action[2])
         size = int(action[3])
 
         if (direction=='V'):                            #se a direcao for vertical
+            pieces = 0
             if (board[x, y]=='~'):                      #se a posicao for vazia
                 rows[x] = int(rows[x]) - 1              #diminui o valor da row
-                columns[y] = int(columns[y]) - 1        #diminui o valor da collumn
+                pieces+= 1        #diminui o valor da collumn
                 board[x, y] = 't'                       #adiciona um top
 
             for i in range(1, size-1):
                 if (board[x+i, y]=='~'):
                     rows[x+i] = int(rows[x+i]) - 1
-                    columns[y] = int(columns[y]) - 1
+                    pieces+=1
                     board[x+i, y]='m'                   #adiciona um middle
 
             if (board[x+size-1, y]=='~'):
                 rows[x+size-1] = int(rows[x+size-1]) - 1
-                columns[y] = int(columns[y]) - 1
+                pieces+=1
                 board[x+size-1, y]='b'                  #adiciona um bottom
-        
+            columns[y] = int(columns[y]) - pieces
         elif (direction=='H'):                            #se a direcao for vertical
+            pieces=0
             if (board[x, y]=='~'):                      #se a posicao for vazia
-                rows[x] = int(rows[x]) - 1              #diminui o valor da row
+                pieces+=1             #diminui o valor da row
                 columns[y] = int(columns[y]) - 1        #diminui o valor da collumn
                 board[x, y] = 'l'                       #adiciona um top
 
             for i in range(1, size-1):
                 if (board[x, y+i]=='~'):
-                    rows[x] = int(rows[x]) - 1
+                    pieces+=1
                     columns[y+i] = int(columns[y+i]) - 1
                     board[x, y+i]='m'                   #adiciona um middle
 
             if (board[x, y+size-1]=='~'):
-                rows[x] = int(rows[x]) - 1
+                pieces+=1 
                 columns[y+size-1] = int(columns[y+size-1]) - 1
                 board[x, y+size-1]='r'                  #adiciona um bottom
+            rows[x] = int(rows[x]) - pieces
 
         elif (direction=='C'):
             board[x,y] = 'c'
             rows[x] = int(rows[x]) - 1
             columns[y] = int(columns[y]) - 1
+            if x*10 + y in free:
+                del free[x*10+y]
+            elif x*10+y in ofree:
+                del ofree[x*10+y]
         boats[size-1] -= 1                              #retira o barco que foi metido
 
         hints = []
@@ -450,8 +516,7 @@ class Bimaru(Problem):
                         condition = True
                 if not condition:
                     hints.append(hint)
-       
-        newBoard = Board(rows, columns, board, boats, np.asarray(hints))
+        newBoard = Board(rows, columns, board, boats, np.asarray(hints), free, ofree)
         newState = BimaruState(newBoard)
         return newState
 
@@ -643,7 +708,6 @@ class Bimaru(Problem):
                     #Se a peça não poder ser posta por restrições laterais, então pomos uma água
                     #lá, para evitar procuras desnecessárias
                     condition = False
-                    #TODO meter agua na row toda
                     oldPieces[i] = '.'
                 board.values[x][y+i] = 'm'
 
@@ -1083,19 +1147,8 @@ class Bimaru(Problem):
 
 
 if __name__ == "__main__":
-    # TODO:
-    # Ler o ficheiro do standard input,
-    # Usar uma técnica de procura para resolver a instância,
-    # Retirar a solução a partir do nó resultante,
-    # Imprimir para o standard output no formato indicado.
     board = Board.parse_instance()
-    #board.values[2][2]='M'
-    #board.printBoard()
-    #print()
     problem = Bimaru(board)
-    #problem.actions(problem.initial)
     result = depth_first_tree_search(problem)
-    #print("-------- CORRECT ONE ---------")
     result.state.board.replaceTilde()
-    #result.state.board.printBoard()
     pass
